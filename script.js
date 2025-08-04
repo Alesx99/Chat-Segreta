@@ -152,15 +152,19 @@ class UI {
         }, 500);
     }
 
-    // Pulisce una chiave RSA rimuovendo i commenti
+    // Pulisce una chiave RSA rimuovendo i commenti e i delimitatori
     cleanRSAKey(key) {
         if (!key) return '';
         
-        // Rimuovi tutti i commenti (linee che iniziano con # o //)
+        // Rimuovi tutti i commenti e i delimitatori BEGIN/END
         const lines = key.split('\n');
         const cleanLines = lines.filter(line => {
             const trimmedLine = line.trim();
-            return trimmedLine && !trimmedLine.startsWith('#') && !trimmedLine.startsWith('//');
+            return trimmedLine && 
+                   !trimmedLine.startsWith('#') && 
+                   !trimmedLine.startsWith('//') &&
+                   !trimmedLine.startsWith('-----BEGIN') &&
+                   !trimmedLine.startsWith('-----END');
         });
         
         return cleanLines.join('\n');
