@@ -18,22 +18,57 @@
         <main>
             <!-- Sezione Generazione Chiavi -->
             <section class="key-section">
-                <h2>🔑 Generazione Chiavi</h2>
-                <div class="key-controls">
-                    <button id="generateKeys" class="btn btn-primary">Genera Nuove Chiavi</button>
-                    <button id="exportKeys" class="btn btn-secondary">Esporta Chiavi</button>
-                    <button id="importKeys" class="btn btn-secondary">Importa Chiavi</button>
+                <h2>🔑 Gestione Chiavi</h2>
+                
+                <!-- Opzioni Chiavi -->
+                <div class="key-options">
+                    <div class="option-card">
+                        <h3>🆕 Genera Nuove Chiavi</h3>
+                        <p>Crea una nuova coppia di chiavi RSA</p>
+                        <button id="generateKeys" class="btn btn-primary">Genera Chiavi</button>
+                    </div>
+                    
+                    <div class="option-card">
+                        <h3>📁 Carica Chiavi Esistenti</h3>
+                        <p>Importa chiavi già generate</p>
+                        <button id="importKeys" class="btn btn-secondary">Importa Chiavi</button>
+                    </div>
+                    
+                    <div class="option-card">
+                        <h3>💾 Salva Chiavi</h3>
+                        <p>Esporta le tue chiavi per backup</p>
+                        <button id="exportKeys" class="btn btn-secondary">Esporta Chiavi</button>
+                    </div>
                 </div>
                 
-                <div class="keys-display">
+                <!-- Inserimento Manuale Chiavi -->
+                <div class="manual-keys">
+                    <h3>✏️ Inserisci Chiavi Manualmente</h3>
+                    <div class="keys-input">
+                        <div class="key-input-group">
+                            <label for="manualPublicKey">Chiave Pubblica:</label>
+                            <textarea id="manualPublicKey" placeholder="Incolla qui la tua chiave pubblica..."></textarea>
+                        </div>
+                        
+                        <div class="key-input-group">
+                            <label for="manualPrivateKey">Chiave Privata:</label>
+                            <textarea id="manualPrivateKey" placeholder="Incolla qui la tua chiave privata..."></textarea>
+                        </div>
+                        
+                        <button id="setManualKeys" class="btn btn-success">✅ Imposta Chiavi</button>
+                    </div>
+                </div>
+                
+                <!-- Visualizzazione Chiavi -->
+                <div class="keys-display" id="keysDisplay" style="display: none;">
                     <div class="key-pair">
-                        <h3>Chiave Pubblica</h3>
+                        <h3>🔓 Chiave Pubblica</h3>
                         <textarea id="publicKey" placeholder="La tua chiave pubblica apparirà qui..." readonly></textarea>
                         <button id="copyPublicKey" class="btn btn-small">📋 Copia</button>
                     </div>
                     
                     <div class="key-pair">
-                        <h3>Chiave Privata</h3>
+                        <h3>🔒 Chiave Privata</h3>
                         <textarea id="privateKey" placeholder="La tua chiave privata apparirà qui..." readonly></textarea>
                         <button id="copyPrivateKey" class="btn btn-small">📋 Copia</button>
                     </div>
@@ -44,68 +79,75 @@
             <section class="message-section">
                 <h2>💬 Messaggi</h2>
                 
+                <div class="message-tabs">
+                    <button class="tab-btn active" data-tab="send">📤 Invia</button>
+                    <button class="tab-btn" data-tab="receive">📥 Ricevi</button>
+                </div>
+                
                 <!-- Invio Messaggi -->
-                <div class="message-input">
-                    <h3>Invia Messaggio</h3>
-                    <div class="input-group">
-                        <label for="recipientPublicKey">Chiave Pubblica del Destinatario:</label>
-                        <textarea id="recipientPublicKey" placeholder="Incolla qui la chiave pubblica del destinatario..."></textarea>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="messageToSend">Messaggio da Inviare:</label>
-                        <textarea id="messageToSend" placeholder="Scrivi il tuo messaggio qui..."></textarea>
-                    </div>
-                    
-                    <button id="encryptAndSend" class="btn btn-success">🔒 Cifra e Prepara per Invio</button>
-                    
-                    <div class="encrypted-message">
-                        <label for="encryptedMessage">Messaggio Cifrato:</label>
-                        <textarea id="encryptedMessage" placeholder="Il messaggio cifrato apparirà qui..." readonly></textarea>
-                        <button id="copyEncrypted" class="btn btn-small">📋 Copia</button>
+                <div class="tab-content active" id="send-tab">
+                    <div class="message-input">
+                        <div class="input-group">
+                            <label for="recipientPublicKey">🔑 Chiave Pubblica del Destinatario:</label>
+                            <textarea id="recipientPublicKey" placeholder="Incolla qui la chiave pubblica del destinatario..."></textarea>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="messageToSend">💬 Messaggio da Inviare:</label>
+                            <textarea id="messageToSend" placeholder="Scrivi il tuo messaggio qui..."></textarea>
+                        </div>
+                        
+                        <button id="encryptAndSend" class="btn btn-success">🔒 Cifra Messaggio</button>
+                        
+                        <div class="encrypted-message" id="encryptedResult" style="display: none;">
+                            <label for="encryptedMessage">📦 Messaggio Cifrato:</label>
+                            <textarea id="encryptedMessage" placeholder="Il messaggio cifrato apparirà qui..." readonly></textarea>
+                            <button id="copyEncrypted" class="btn btn-small">📋 Copia</button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Ricezione Messaggi -->
-                <div class="message-output">
-                    <h3>Ricevi Messaggio</h3>
-                    <div class="input-group">
-                        <label for="encryptedMessageReceived">Messaggio Cifrato Ricevuto:</label>
-                        <textarea id="encryptedMessageReceived" placeholder="Incolla qui il messaggio cifrato ricevuto..."></textarea>
-                    </div>
-                    
-                    <button id="decryptMessage" class="btn btn-info">🔓 Decifra Messaggio</button>
-                    
-                    <div class="decrypted-message">
-                        <label for="encryptedMessageReceived">Messaggio Decifrato:</label>
-                        <textarea id="decryptedMessage" placeholder="Il messaggio decifrato apparirà qui..." readonly></textarea>
-                        <button id="copyDecrypted" class="btn btn-small">📋 Copia</button>
+                <div class="tab-content" id="receive-tab">
+                    <div class="message-output">
+                        <div class="input-group">
+                            <label for="encryptedMessageReceived">📦 Messaggio Cifrato Ricevuto:</label>
+                            <textarea id="encryptedMessageReceived" placeholder="Incolla qui il messaggio cifrato ricevuto..."></textarea>
+                        </div>
+                        
+                        <button id="decryptMessage" class="btn btn-info">🔓 Decifra Messaggio</button>
+                        
+                        <div class="decrypted-message" id="decryptedResult" style="display: none;">
+                            <label for="decryptedMessage">💬 Messaggio Decifrato:</label>
+                            <textarea id="decryptedMessage" placeholder="Il messaggio decifrato apparirà qui..." readonly></textarea>
+                            <button id="copyDecrypted" class="btn btn-small">📋 Copia</button>
+                        </div>
                     </div>
                 </div>
             </section>
 
             <!-- Sezione Istruzioni -->
             <section class="instructions">
-                <h2>📖 Come Utilizzare</h2>
+                <h2>📖 Guida Rapida</h2>
                 <div class="instructions-content">
                     <div class="instruction-step">
-                        <h4>1. Generazione Chiavi</h4>
-                        <p>Clicca su "Genera Nuove Chiavi" per creare la tua coppia di chiavi RSA. La chiave pubblica può essere condivisa, quella privata deve rimanere segreta.</p>
+                        <h4>1. 🔑 Genera o Carica Chiavi</h4>
+                        <p>Genera nuove chiavi o carica quelle esistenti. La chiave pubblica può essere condivisa, quella privata deve rimanere segreta.</p>
                     </div>
                     
                     <div class="instruction-step">
-                        <h4>2. Invio Messaggio</h4>
-                        <p>Per inviare un messaggio: inserisci la chiave pubblica del destinatario, scrivi il messaggio e clicca "Cifra e Prepara per Invio". Copia il messaggio cifrato e invialo al destinatario.</p>
+                        <h4>2. 📤 Invia Messaggio</h4>
+                        <p>Inserisci la chiave pubblica del destinatario, scrivi il messaggio e cifralo. Copia il risultato e invialo.</p>
                     </div>
                     
                     <div class="instruction-step">
-                        <h4>3. Ricezione Messaggio</h4>
-                        <p>Per ricevere un messaggio: incolla il messaggio cifrato ricevuto e clicca "Decifra Messaggio". Il messaggio originale apparirà nel campo decifrato.</p>
+                        <h4>3. 📥 Ricevi Messaggio</h4>
+                        <p>Incolla il messaggio cifrato ricevuto e decifralo con la tua chiave privata.</p>
                     </div>
                     
                     <div class="instruction-step">
                         <h4>⚠️ Sicurezza</h4>
-                        <p>Le chiavi vengono generate localmente nel browser. Non vengono mai inviate a server esterni. Mantieni al sicuro la tua chiave privata!</p>
+                        <p>Tutto avviene localmente nel browser. Le tue chiavi private non lasciano mai il dispositivo!</p>
                     </div>
                 </div>
             </section>

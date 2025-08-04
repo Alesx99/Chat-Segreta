@@ -103,12 +103,12 @@ class UI {
         this.initializeEventListeners();
     }
 
-    // Inizializza tutti gli event listener
     initializeEventListeners() {
-        // Generazione chiavi
+        // Gestione chiavi
         document.getElementById('generateKeys').addEventListener('click', () => this.generateKeys());
         document.getElementById('exportKeys').addEventListener('click', () => this.exportKeys());
         document.getElementById('importKeys').addEventListener('click', () => this.importKeys());
+        document.getElementById('setManualKeys').addEventListener('click', () => this.setManualKeys());
         
         // Copia chiavi
         document.getElementById('copyPublicKey').addEventListener('click', () => this.copyToClipboard('publicKey'));
@@ -121,6 +121,11 @@ class UI {
         // Copia messaggi
         document.getElementById('copyEncrypted').addEventListener('click', () => this.copyToClipboard('encryptedMessage'));
         document.getElementById('copyDecrypted').addEventListener('click', () => this.copyToClipboard('decryptedMessage'));
+        
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
+        });
     }
 
     // Genera nuove chiavi
@@ -133,42 +138,66 @@ class UI {
             if (result.success) {
                 document.getElementById('publicKey').value = result.publicKey;
                 document.getElementById('privateKey').value = result.privateKey;
-                this.showMessage('Chiavi generate con successo!', 'success');
+                document.getElementById('keysDisplay').style.display = 'grid';
+                this.showMessage('✅ Chiavi generate con successo!', 'success');
             } else {
-                this.showMessage(result.error, 'error');
+                this.showMessage('❌ ' + result.error, 'error');
             }
             
             this.hideLoading('generateKeys');
-        }, 100);
+        }, 500);
+    }
+
+    // Imposta chiavi manualmente
+    setManualKeys() {
+        const publicKey = document.getElementById('manualPublicKey').value.trim();
+        const privateKey = document.getElementById('manualPrivateKey').value.trim();
+        
+        if (!publicKey || !privateKey) {
+            this.showMessage('❌ Inserisci sia la chiave pubblica che quella privata', 'error');
+            return;
+        }
+        
+        if (!validateRSAKey(publicKey, 'public') || !validateRSAKey(privateKey, 'private')) {
+            this.showMessage('❌ Chiavi RSA non valide', 'error');
+            return;
+        }
+        
+        const result = this.cryptoManager.setKeys(publicKey, privateKey);
+        
+        if (result.success) {
+            document.getElementById('publicKey').value = publicKey;
+            document.getElementById('privateKey').value = privateKey;
+            document.getElementById('keysDisplay').style.display = 'grid';
+            this.showMessage('✅ Chiavi impostate correttamente!', 'success');
+        } else {
+            this.showMessage('❌ ' + result.error, 'error');
+        }
     }
 
     // Esporta chiavi
     exportKeys() {
-        const publicKey = document.getElementById('publicKey').value;
-        const privateKey = document.getElementById('privateKey').value;
-        
-        if (!publicKey || !privateKey) {
-            this.showMessage('Genera prima le chiavi!', 'error');
+        if (!this.cryptoManager.currentKeys.publicKey || !this.cryptoManager.currentKeys.privateKey) {
+            this.showMessage('❌ Genera o carica le chiavi prima di esportarle', 'error');
             return;
         }
-
-        const keysData = {
-            publicKey: publicKey,
-            privateKey: privateKey,
-            timestamp: new Date().toISOString()
-        };
-
-        const blob = new Blob([JSON.stringify(keysData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `chiavi_crittografiche_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
         
-        this.showMessage('Chiavi esportate con successo!', 'success');
+        const keysData = {
+            publicKey: this.cryptoManager.currentKeys.publicKey,
+            privateKey: this.cryptoManager.currentKeys.privateKey,
+            timestamp: new Date().toISOString(),
+            version: '1.0'
+        };
+        
+        const dataStr = JSON.stringify(keysData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `chiavi_rsa_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        
+        this.showMessage('✅ Chiavi esportate con successo!', 'success');
     }
 
     // Importa chiavi
@@ -177,30 +206,37 @@ class UI {
         input.type = 'file';
         input.accept = '.json';
         
-        input.onchange = (event) => {
-            const file = event.target.files[0];
+        input.onchange = (e) => {
+            const file = e.target.files[0];
             if (!file) return;
-
+            
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = (event) => {
                 try {
-                    const keysData = JSON.parse(e.target.result);
+                    const keysData = JSON.parse(event.target.result);
                     
-                    if (keysData.publicKey && keysData.privateKey) {
-                        const result = this.cryptoManager.setKeys(keysData.publicKey, keysData.privateKey);
-                        
-                        if (result.success) {
-                            document.getElementById('publicKey').value = keysData.publicKey;
-                            document.getElementById('privateKey').value = keysData.privateKey;
-                            this.showMessage('Chiavi importate con successo!', 'success');
-                        } else {
-                            this.showMessage(result.error, 'error');
-                        }
+                    if (!keysData.publicKey || !keysData.privateKey) {
+                        this.showMessage('❌ File non valido: chiavi mancanti', 'error');
+                        return;
+                    }
+                    
+                    if (!validateRSAKey(keysData.publicKey, 'public') || !validateRSAKey(keysData.privateKey, 'private')) {
+                        this.showMessage('❌ Chiavi RSA non valide nel file', 'error');
+                        return;
+                    }
+                    
+                    const result = this.cryptoManager.setKeys(keysData.publicKey, keysData.privateKey);
+                    
+                    if (result.success) {
+                        document.getElementById('publicKey').value = keysData.publicKey;
+                        document.getElementById('privateKey').value = keysData.privateKey;
+                        document.getElementById('keysDisplay').style.display = 'grid';
+                        this.showMessage('✅ Chiavi importate con successo!', 'success');
                     } else {
-                        this.showMessage('File non valido!', 'error');
+                        this.showMessage('❌ ' + result.error, 'error');
                     }
                 } catch (error) {
-                    this.showMessage('Errore nella lettura del file!', 'error');
+                    this.showMessage('❌ Errore nella lettura del file', 'error');
                 }
             };
             reader.readAsText(file);
@@ -215,15 +251,20 @@ class UI {
         const message = document.getElementById('messageToSend').value.trim();
         
         if (!recipientPublicKey) {
-            this.showMessage('Inserisci la chiave pubblica del destinatario!', 'error');
+            this.showMessage('❌ Inserisci la chiave pubblica del destinatario', 'error');
             return;
         }
         
         if (!message) {
-            this.showMessage('Inserisci un messaggio da cifrare!', 'error');
+            this.showMessage('❌ Inserisci un messaggio da cifrare', 'error');
             return;
         }
-
+        
+        if (!validateRSAKey(recipientPublicKey, 'public')) {
+            this.showMessage('❌ Chiave pubblica non valida', 'error');
+            return;
+        }
+        
         this.showLoading('encryptAndSend');
         
         setTimeout(() => {
@@ -231,13 +272,14 @@ class UI {
             
             if (result.success) {
                 document.getElementById('encryptedMessage').value = result.encryptedMessage;
-                this.showMessage('Messaggio cifrato con successo!', 'success');
+                document.getElementById('encryptedResult').style.display = 'block';
+                this.showMessage('✅ Messaggio cifrato con successo!', 'success');
             } else {
-                this.showMessage(result.error, 'error');
+                this.showMessage('❌ ' + result.error, 'error');
             }
             
             this.hideLoading('encryptAndSend');
-        }, 100);
+        }, 300);
     }
 
     // Decifra messaggio
@@ -245,10 +287,15 @@ class UI {
         const encryptedMessage = document.getElementById('encryptedMessageReceived').value.trim();
         
         if (!encryptedMessage) {
-            this.showMessage('Inserisci un messaggio cifrato da decifrare!', 'error');
+            this.showMessage('❌ Inserisci un messaggio cifrato', 'error');
             return;
         }
-
+        
+        if (!this.cryptoManager.currentKeys.privateKey) {
+            this.showMessage('❌ Carica le tue chiavi prima di decifrare', 'error');
+            return;
+        }
+        
         this.showLoading('decryptMessage');
         
         setTimeout(() => {
@@ -256,33 +303,39 @@ class UI {
             
             if (result.success) {
                 document.getElementById('decryptedMessage').value = result.decryptedMessage;
-                this.showMessage('Messaggio decifrato con successo!', 'success');
+                document.getElementById('decryptedResult').style.display = 'block';
+                this.showMessage('✅ Messaggio decifrato con successo!', 'success');
             } else {
-                this.showMessage(result.error, 'error');
+                this.showMessage('❌ ' + result.error, 'error');
             }
             
             this.hideLoading('decryptMessage');
-        }, 100);
+        }, 300);
     }
 
-    // Copia testo negli appunti
+    // Cambia tab
+    switchTab(tabName) {
+        // Rimuovi classe active da tutti i tab
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // Aggiungi classe active al tab selezionato
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        document.getElementById(`${tabName}-tab`).classList.add('active');
+    }
+
+    // Copia negli appunti
     copyToClipboard(elementId) {
         const element = document.getElementById(elementId);
-        const text = element.value;
+        element.select();
+        element.setSelectionRange(0, 99999);
         
-        if (!text) {
-            this.showMessage('Niente da copiare!', 'error');
-            return;
-        }
-
-        navigator.clipboard.writeText(text).then(() => {
-            this.showMessage('Copiato negli appunti!', 'success');
-        }).catch(() => {
-            // Fallback per browser più vecchi
-            element.select();
+        try {
             document.execCommand('copy');
-            this.showMessage('Copiato negli appunti!', 'success');
-        });
+            this.showMessage('✅ Copiato negli appunti!', 'success');
+        } catch (err) {
+            this.showMessage('❌ Errore nella copia', 'error');
+        }
     }
 
     // Mostra messaggio di successo/errore
@@ -381,6 +434,6 @@ function formatKey(key) {
 
 /*
  * 🔐 Comunicazione Crittografica Sicura
- * Sviluppato da Alesx - 2024
+ * Sviluppato da Alesx - 2025
  * Utilizza crittografia RSA per comunicazioni sicure
  */ 
