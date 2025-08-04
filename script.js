@@ -136,8 +136,12 @@ class UI {
             const result = this.cryptoManager.generateKeys();
             
             if (result.success) {
-                document.getElementById('publicKey').value = result.publicKey;
-                document.getElementById('privateKey').value = result.privateKey;
+                // Pulisci le chiavi rimuovendo i commenti
+                const cleanPublicKey = this.cleanRSAKey(result.publicKey);
+                const cleanPrivateKey = this.cleanRSAKey(result.privateKey);
+                
+                document.getElementById('publicKey').value = cleanPublicKey;
+                document.getElementById('privateKey').value = cleanPrivateKey;
                 document.getElementById('keysDisplay').style.display = 'grid';
                 this.showMessage('✅ Chiavi generate con successo!', 'success');
             } else {
@@ -146,6 +150,20 @@ class UI {
             
             this.hideLoading('generateKeys');
         }, 500);
+    }
+
+    // Pulisce una chiave RSA rimuovendo i commenti
+    cleanRSAKey(key) {
+        if (!key) return '';
+        
+        // Rimuovi tutti i commenti (linee che iniziano con # o //)
+        const lines = key.split('\n');
+        const cleanLines = lines.filter(line => {
+            const trimmedLine = line.trim();
+            return trimmedLine && !trimmedLine.startsWith('#') && !trimmedLine.startsWith('//');
+        });
+        
+        return cleanLines.join('\n');
     }
 
     // Imposta chiavi manualmente
@@ -166,8 +184,12 @@ class UI {
         const result = this.cryptoManager.setKeys(publicKey, privateKey);
         
         if (result.success) {
-            document.getElementById('publicKey').value = publicKey;
-            document.getElementById('privateKey').value = privateKey;
+            // Pulisci anche le chiavi inserite manualmente
+            const cleanPublicKey = this.cleanRSAKey(publicKey);
+            const cleanPrivateKey = this.cleanRSAKey(privateKey);
+            
+            document.getElementById('publicKey').value = cleanPublicKey;
+            document.getElementById('privateKey').value = cleanPrivateKey;
             document.getElementById('keysDisplay').style.display = 'grid';
             this.showMessage('✅ Chiavi impostate correttamente!', 'success');
         } else {
@@ -228,8 +250,12 @@ class UI {
                     const result = this.cryptoManager.setKeys(keysData.publicKey, keysData.privateKey);
                     
                     if (result.success) {
-                        document.getElementById('publicKey').value = keysData.publicKey;
-                        document.getElementById('privateKey').value = keysData.privateKey;
+                        // Pulisci le chiavi importate
+                        const cleanPublicKey = this.cleanRSAKey(keysData.publicKey);
+                        const cleanPrivateKey = this.cleanRSAKey(keysData.privateKey);
+                        
+                        document.getElementById('publicKey').value = cleanPublicKey;
+                        document.getElementById('privateKey').value = cleanPrivateKey;
                         document.getElementById('keysDisplay').style.display = 'grid';
                         this.showMessage('✅ Chiavi importate con successo!', 'success');
                     } else {
