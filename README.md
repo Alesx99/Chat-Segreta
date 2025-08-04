@@ -129,7 +129,7 @@ Questo progetto è rilasciato sotto licenza MIT. Puoi utilizzarlo liberamente pe
 
 ## 👨‍💻 Sviluppatore
 
-**Alesx** - 2024
+**Alesx** - 2025
 
 Sviluppatore di applicazioni web sicure e innovative.
 
